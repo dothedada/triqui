@@ -1,22 +1,22 @@
 // Tablero
-const gameBoard = (() => {
-    const board = []
-    for(let row = 0; row < 3; row++) {
-        board[row] = []
-        for(let col = 0; col < 3; col++){
-            board[row].push('-')
+const board = (() => {
+    const tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
+
+    const printTile = (row, col = 0) => tiles[row][col] 
+    const printRow = row => tiles[row]
+    const printCol = col => tiles.map(arr => arr[col])
+    const printDiag1 = () => tiles.map((arr, index) => arr[index])
+    const printDiag2 = () => tiles.toReversed().map((arr, index) => arr[index])
+
+    const setMark = (mark, row, col) => {
+        if(printTile(row, col)) {
+            window.alert('La casilla ya está marcada, selecciona otra')
+            return
         }
+        tiles[row][col] = mark
     }
 
-    const get = () => board 
-
-    const setMark = (mark, place) => {
-        const [row, col] = [...place];
-        if(board[row][col] !== '-') return
-        board[row][col] = mark
-    }
-
-    return { get, setMark }
+    return { printTile, printRow, printCol, printDiag1, printDiag2, setMark, tiles }
 })()
 
 // jugadores
@@ -30,91 +30,48 @@ const players = (() => {
         })
     }
 
-    const get = (num) => players[num]
+    const getMark = (num) => players[num].mark
+    const getName = (num) => players[num].name
 
-    return { make, get }
+    return { make, getMark, getName }
 })()
 
-players.make(window.prompt('Nombre jugador 1'))
-players.make(window.prompt('Nombre jugador 2'))
+players.make('miguel')
+players.make('andea')
 
 // Flujo de juego
 const gameFlow = (() => {
-    let round = 0
-    const getRound = () => round
-    const nextRound = () => round++
 
-    let winner = false
-
-    const findWinner = (row, col, mark) => {
-        // filas
-        if(gameBoard.get()[row].every(cell => cell === mark)) {
-            winner = true
-            window.alert(`Ganó ${mark} por fila`)
-            return
+    function endGame(mark, row, col) {
+        // Fila
+        if (board.printRow(row).every(cell => cell === mark)) {
+            window.alert(`${mark} ganó, fila`)
+            return true
+        }
+        // Columna
+        if (board.printCol(col).every(cell => cell === mark)) {
+            window.alert(`${mark} ganó, columna`)
+            return true
+        }
+        // Diagonal
+        if (board.printDiag1().every(cell => cell === mark) ||
+            board.printDiag2().every(cell => cell === mark)) {
+            window.alert(`${mark} ganó, diagonal`)
+            return true
         }
 
-        // columnas
-        for(let fRow = 0; fRow < 3; fRow++){
-            if(gameBoard.get()[fRow][col] !== mark) break
-            if(fRow === 2) {
-                winner = true
-                window.alert(`Ganó ${mark} por columna`)
-                return
-            }
-        }
-
-        // diagonales
-        for(let celda = 0; celda < 3; celda++) {
-            if(gameBoard.get()[celda][celda] !== mark) break
-            if(celda === 2) {
-                winner = true
-                window.alert(`Ganó ${mark} por diagonal 1`)
-                return
-            }
-        }
-        if(gameBoard.get()[0][2] === mark &&
-            gameBoard.get()[1][1] === mark &&
-            gameBoard.get()[2][0] === mark) {
-            winner = true
-            window.alert(`Ganó ${mark} por diagonal 2`)
-            return
-        }
-
-        winner = false
+        return false
     }
 
-    do {
-        const row = +window.prompt(`${players.get(round % 2).name} selecciona una fila`)
-        const col = +window.prompt(`${players.get(round % 2).name} selecciona una columna`)
-        if(gameBoard.get()[row][col] !== '-') {
-            window.alert('esa casilla ya fue marcada, selecciona otra')
-            continue
-        } 
-        gameBoard.setMark(players.get(round % 2).mark, [row, col])
-        console.log(gameBoard.get())
-        findWinner(row, col, players.get(round % 2).mark)
-        nextRound()
+    for(let round = 0; round < 9; round++) {
+        const row = +window.prompt(`${players.getName(round % 2)} selecciona una fila`)
+        const col = +window.prompt(`${players.getName(round % 2)} selecciona una columna`)
 
-    } while (!winner || round < 10)
+        board.setMark(players.getMark(round % 2), row, col)
+        console.log(board.tiles)
 
-    window.alert('alguien ganó')
+        if(endGame(players.getMark(round % 2), row, col)) break
+        
 
-
-    // tomar posicion jugador
-    // evaluar
-    // cambiar de jugador
-    // tomar posicion jugador
-    // evaluar
-    // ...
-
-
-
-
-
-    return { getRound, nextRound }
-
+    }
 })()
-
-// intefase
-//
