@@ -1,14 +1,14 @@
 const board = (() => {
     const tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
 
-    const printTile = (row, col) => tiles[row][col] 
-    const printRow = row => tiles[row]
-    const printCol = col => tiles.map(arr => arr[col])
-    const printDiag1 = () => tiles.map((arr, index) => arr[index])
-    const printDiag2 = () => tiles.toReversed().map((arr, index) => arr[index])
-    const setMark = (mark, row, col) => { tiles[row][col] = mark }
+    const getTile = (row, col) => tiles[row][col] 
+    const getRow = row => tiles[row]
+    const getCol = col => tiles.map(arr => arr[col])
+    const getDiag1 = () => tiles.map((arr, ind) => arr[ind])
+    const getDiag2 = () => tiles.toReversed().map((arr, ind) => arr[ind])
+    const setTile = (mark, row, col) => { tiles[row][col] = mark }
 
-    return { printTile, printRow, printCol, printDiag1, printDiag2, setMark }
+    return { getTile, getRow, getCol, getDiag1, getDiag2, setTile}
 })()
 
 const players = (() => {
@@ -28,10 +28,10 @@ const players = (() => {
 
 const gameFlow = (() => {
     function endGame(mark, row, col) {
-        if (board.printRow(row).every(cell => cell === mark)) return true
-        if (board.printCol(col).every(cell => cell === mark)) return true 
-        if (board.printDiag1().every(cell => cell === mark) ||
-            board.printDiag2().every(cell => cell === mark)) return true
+        if (board.getRow(row).every(cell => cell === mark)) return true
+        if (board.getCol(col).every(cell => cell === mark)) return true 
+        if (board.getDiag1().every(cell => cell === mark) ||
+            board.getDiag2().every(cell => cell === mark)) return true
 
         return false
     }
@@ -43,12 +43,13 @@ const gameFlow = (() => {
         const row = +window.prompt(`${players.getName(round % 2)} selecciona una fila`)
         const col = +window.prompt(`${players.getName(round % 2)} selecciona una columna`)
 
-        if (board.printTile(row, col)) {
+        if (board.getTile(row, col)) {
             window.alert('la celda ya está ocupada')
             continue
+
         }
 
-        board.setMark(players.getMark(round % 2), row, col)
+        board.setTile(players.getMark(round % 2), row, col)
 
         if (endGame(players.getMark(round % 2), row, col)) {
             window.alert(`${players.getName(round % 2)} ganó.`)
