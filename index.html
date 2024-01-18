@@ -26,7 +26,7 @@
             </a>
         </div>
 
-        <form class="formulario hidden">
+        <form class="formulario">
             <div class="formulario__jugador">
                 <label for="player1" class="jugador__nombre">Jugador(a/e) 1</label>
                 <input type="text" 
@@ -44,7 +44,7 @@
             </button>
         </form>
 
-        <div class="jugadores ">
+        <div class="jugadores hidden">
             <div class="jugador">
                 <div class="jugador__nombre">jugador 1</div>
                 <div>
@@ -70,41 +70,41 @@
 
     <main class="board">
         <h2>Jugador 2, tu turno</h2>
-        <button class="tile" type="button" data-tile="0">
+        <button class="tile" type="button" data-tile="0-0">
             <span class="sr-only">marcar la esquina izquierda superior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="1">
+        <button class="tile" type="button" data-tile="0-1">
             <span class="sr-only">marcar la casilla central superior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="2">
+        <button class="tile" type="button" data-tile="0-2">
             <span class="sr-only">marcar la esquina derecha superior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="3">
+        <button class="tile" type="button" data-tile="1-0">
             <span class="sr-only">marcar la casilla izquierda al medio con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="4">
+        <button class="tile" type="button" data-tile="1-1">
             <span class="sr-only">marcar la casilla de toda la mitad con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="5">
+        <button class="tile" type="button" data-tile="1-2">
             <span class="sr-only">marcar la casilla derecha al medio con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="6">
+        <button class="tile" type="button" data-tile="2-0">
             <span class="sr-only">marcar la esquina izquierda inferior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="7">
+        <button class="tile" type="button" data-tile="2-1">
             <span class="sr-only">marcar la casilla central inferior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
-        <button class="tile" type="button" data-tile="8">
+        <button class="tile" type="button" data-tile="2-2">
             <span class="sr-only">marcar la esquina derecha inferior con</span>
-            <span class="marca">X</span>
+            <span class="marca"></span>
         </button>
     </main>
     <dialog id="finPartida" class="modal">
