@@ -6,13 +6,15 @@
     <title>TRIQUI - Tres en línea</title>
     <link rel="stylesheet" href="styles.css">
     <script src="main.js" defer></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,700,1,0" />
 </head>
 <body>
     <header class="header">
-        <div class="logo">
+        <div>
             <a href="https://mmejia.com" target="_blank">
                 <span id="mmejia-logo" class="sr-only">mmejia</span>
                 <svg
+                    class="logo"
                     viewBox="0 0 405 180"
                     role="img"
                     aria-labelledby="mmejia-logo">
@@ -24,47 +26,71 @@
             </a>
         </div>
 
-        <form class="formulario">
+        <form class="formulario hidden">
             <div class="formulario__jugador">
-                <label for="player1" class="jugador__label">Jugador(a/e) 1</label>
+                <label for="player1" class="jugador__nombre">Jugador(a/e) 1</label>
                 <input type="text" 
-                    id="player1" class="jugador__input">
+                    id="player1" class="jugador__input" placeholder="nombre">
             </div>
             <div class="versus">Vs.</div>
             <div class="formulario__jugador">
-                <label for="player2" class="jugador__label">Jugador(a/e) 2</label>
+                <label for="player2" class="jugador__nombre">Jugador(a/e) 2</label>
                 <input type="text" 
-                    id="player2" class="jugador__input">
+                    id="player2" class="jugador__input" placeholder="nombre">
             </div>
-            <button id="start" type="button">Iniciar</button>
+            <button type="button">
+                <span class="sr-only">Iniciar</span>
+                <span class="material-symbols-rounded">play_arrow</span>
+            </button>
         </form>
 
-        <div class="jugadores">
+        <div class="jugadores ">
             <div class="jugador">
                 <div class="jugador__nombre">jugador 1</div>
-                <div class="jugador__victorias">X X X</div>
+                <div>
+                    <span class="marca__victorias">X</span>
+                    <span class="marca__actual">X X</span>
+                </div>
             </div>
             <div class="versus">Vs.</div>
-            <div class="jugador">
+            <div class="jugador jugador__turno">
                 <div class="jugador__nombre">jugador 2</div>
-                <div class="jugador__victorias">O O</div>
+                <div>
+                    <span class="marca__victorias">O O</span>
+                    <span class="marca__actual">O</span>
+                </div>
             </div>
         </div>
         
-        <button id="restart" type="button">Reiniciar</button>
+        <button type="button">
+            <span class="sr-only">Reiniciar</span>
+            <span class="material-symbols-rounded">replay</span>
+        </button>
     </header>
 
-    <main class="tile">
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
-        <button class="tile" type="button">-</button>
+    <main class="board">
+        <button class="tile" type="button" disabled>O</button>
+        <button class="tile tile--x" type="button">O</button>
+        <button class="tile tile--ganadora" type="button" disabled>X</button>
+        <button class="tile tile--o" type="button">O</button>
+        <button class="tile" type="button" disabled></button>
+        <button class="tile tile--ganadora" type="button" disabled>X</button>
+        <button class="tile" type="button"></button>
+        <button class="tile" type="button">X</button>
+        <button class="tile tile--ganadora" type="button" disabled>X</button>
+        <h2 class="estado">Ganaste</h2>
     </main>
+    <dialog id="finPartida">
+        <h1>Resultado</h1>
+        <button id="reiniciaJuego">Siguiente ronda</button>
+        <button id="reiniciaJuego">Volver a jugar</button>
+    </dialog>
+
+    <script>
+        const modal = document.getElementById('finPartida')
+        const abrirModal = document.getElementById('reiniciaJuego')
+        modal.showModal()
+    </script>
     
 </body>
 </html>

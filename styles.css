@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins:700|JetBrains%20Mono:400');
+:root {
+    --text: hsl(83, 44%, 93%);
+    --background: hsl(105, 40%, 2%);
+    --background-menu: hsl(163, 17%, 5%);
+    --background-menu-alpha: hsl(163 17% 5% / 0.4);
+    --primary: hsl(88, 47%, 50%);
+    --secondary: hsl(163, 47%, 29%);
+    --accent: hsl(185, 76%, 46%);
+
+    --font-h: 'Poppins', sans-serif;
+    --font-p: 'JetBrains Mono', monospace;
+}
+*:not(dialog) {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 100%;
+}
+body {
+    font-family: var(--font-p);
+    font-weight: 400;
+    background-color: var(--background);
+    color: var(--text);
+}
+h1,
+h2 {
+    font-family: var(--font-h);
+    font-weight: 700;
+}
+h1 {
+    font-size: 4.210rem; 
+}
+h2 {
+    font-size: 3.158rem;
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.header {
+    padding: 1.2rem .5rem 1.2rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    min-height: 3.6rem;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--background-menu);
+}
+.logo {
+    height: 2.4rem;
+    fill: var(--secondary);
+}
+.formulario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+.formulario__jugador {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.jugador__nombre {
+    color: var(--primary);
+}
+.jugador__input {
+    appearance: none;
+    border: none;
+    padding: 0.2rem 1rem;
+    margin: 0.4rem 0;
+    text-align: center;
+    font: var(--font-p);
+    font-size: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--accent);
+    color: var(--background);
+    transition: outline-offset 0.2s ease-out;
+
+}
+.jugador__input:focus-visible {
+    outline: solid 2px var(--accent);
+    outline-offset: 3px;
+}
+.versus {
+    color: var(--secondary);
+}
+button {
+    cursor: pointer;
+}
+.header button {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 0 0 0.5rem;
+    border: solid 2px var(--secondary);
+    color: var(--accent);
+    border-radius: 50%;
+    background: none;
+    font-size: 2rem;
+    transition: background 0.1s ease-out,
+        outline-offset 0.1s ease-out;
+}
+.header button:hover,
+.header button:focus-visible {
+    border: none;
+    background-color: var(--accent);
+    color: var(--background);
+    outline: solid 2px var(--accent);
+    outline-offset: 3px;
+    
+}
+.jugadores {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+.jugador {
+    position: relative;
+    padding: 0.2rem 1.5rem;
+}
+.jugador > div {
+    height: 1.5rem;
+}
+.jugador__turno {
+    background-color: var(--background);
+    /* border: solid 1px var(--primary); */
+    border-radius: 0.5rem;
+}
+.marca__actual {
+    opacity: 0.3;
+}
+
+.board {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, clamp(100px, 30%, 200px));
+    grid-template-rows: repeat(4, auto);
+    place-content: center;
+    gap: 0.5rem;
+}
+.tile {
+    aspect-ratio: 1;
+    background-color: var(--background);
+    border: solid 2px var(--secondary);
+    border-radius: 2rem;
+    font-family: var(--font-h);
+    font-size: 7rem;
+    color: var(--background);
+    transition: background-color .4s ease,
+        color 0.1s ease-out,
+        border 0.1s ease-in-out,
+        border-radius 0.3s ease-in-out;
+}
+.tile:hover,
+.tile:focus-visible {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    outline: solid 4px var(--background);
+    color: var(--background);
+    outline-offset: -8px;
+    border-radius: 50%;
+}
+.tile:disabled {
+    border: none;
+    background-color: var(--background-menu);
+    color: var(--primary);
+    cursor: unset;
+    outline: none;
+    border-radius: 2rem;
+}
+.tile--ganadora:disabled {
+    border: none;
+    background-color: var(--primary);
+    color: var(--background-menu);
+}
+
+::backdrop {
+    backdrop-filter: blur(20px);
+}
+#finPartida {
+    text-align: center;
+    padding: 4rem;
+    background-color: var(--background-menu-alpha);
+    border: solid 2px var(--background-menu);
+    border-radius: 2rem;
+    color: var(--text);
+}
+
+
+.sr-only:not(:focus):not(:active) {
+    clip: rect(0 0 0 0); 
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap; 
+    width: 1px;
+}
+.hidden {
+    display: none;
+}
+
