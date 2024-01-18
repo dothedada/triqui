@@ -3,7 +3,6 @@
     --text: hsl(83, 44%, 93%);
     --background: hsl(105, 40%, 2%);
     --background-menu: hsl(163, 17%, 5%);
-    --background-menu-alpha: hsl(163 17% 5% / 0.4);
     --primary: hsl(88, 47%, 50%);
     --secondary: hsl(163, 47%, 29%);
     --accent: hsl(185, 76%, 46%);
@@ -35,8 +34,6 @@ h1 {
 }
 h2 {
     font-size: 3.158rem;
-    grid-column: 1 / -1;
-    text-align: center;
 }
 
 .header {
@@ -135,12 +132,17 @@ button {
 }
 
 .board {
-    padding: 2rem;
+    padding: 1rem;
     display: grid;
     grid-template-columns: repeat(3, clamp(100px, 30%, 200px));
     grid-template-rows: repeat(4, auto);
     place-content: center;
     gap: 0.5rem;
+}
+.board h2 {
+    margin: 0 0 1rem;
+    grid-column: 1 / -1;
+    text-align: center;
 }
 .tile {
     aspect-ratio: 1;
@@ -159,9 +161,7 @@ button {
 .tile:focus-visible {
     background-color: var(--accent);
     border-color: var(--accent);
-    outline: solid 4px var(--background);
     color: var(--background);
-    outline-offset: -8px;
     border-radius: 50%;
 }
 .tile:disabled {
@@ -169,7 +169,6 @@ button {
     background-color: var(--background-menu);
     color: var(--primary);
     cursor: unset;
-    outline: none;
     border-radius: 2rem;
 }
 .tile--ganadora:disabled {
@@ -181,13 +180,34 @@ button {
 ::backdrop {
     backdrop-filter: blur(20px);
 }
-#finPartida {
+.modal {
     text-align: center;
     padding: 1.5rem 3rem;
     background-color: var(--background-menu-alpha);
-    border: solid 2px var(--primary);
+    border: solid 1px var(--secondary);
     border-radius: 2rem;
     color: var(--text);
+}
+.modal__btn {
+    margin: 2rem 1rem 0;
+    padding: 0.5rem 1.5rem;
+    border: solid 2px var(--accent);
+    border-radius: 0.4rem;
+    background: none;
+    font-family: var(--font-p);
+    color: var(--accent);
+    transition: all 0.2s ease;
+}
+.modal__btn--shy {
+    border: solid 2px var(--secondary);
+    color: var(--secondary);
+}
+.modal__btn:hover,
+.modal__btn:focus-visible {
+    background-color: var(--accent);
+    color: var(--background);
+    outline: solid 2px var(--accent);
+    outline-offset: 4px;
 }
 
 
