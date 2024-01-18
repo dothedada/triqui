@@ -183,9 +183,9 @@ button {
 }
 #finPartida {
     text-align: center;
-    padding: 4rem;
+    padding: 1.5rem 3rem;
     background-color: var(--background-menu-alpha);
-    border: solid 2px var(--background-menu);
+    border: solid 2px var(--primary);
     border-radius: 2rem;
     color: var(--text);
 }
