@@ -1,14 +1,40 @@
+const events = (() => {
+    const allEvents = {}
+
+    const sub = (eventName, callback) => {
+        if (!allEvents[eventName]) allEvents[eventName] = []
+        allEvents[eventName].push(callback)
+    }
+
+    const pub = (eventName, value) => {
+        if (allEvents[eventName]) {
+            for(const callback of allEvents[eventName]) callback(value)
+        }
+    }
+
+    return { sub, pub }
+})()
+
 const board = (() => {
     const tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
+    const promtBoard = () => console.log(tiles)
+
+    events.sub('board', promtBoard)
+    events.pub('board', tiles)
 
     const getTile = (row, col) => tiles[row][col] 
     const getRow = row => tiles[row]
     const getCol = col => tiles.map(arr => arr[col])
     const getDiag1 = () => tiles.map((arr, ind) => arr[ind])
     const getDiag2 = () => tiles.toReversed().map((arr, ind) => arr[ind])
-    const setTile = (mark, row, col) => { tiles[row][col] = mark }
+    const getBoard = () => tiles
 
-    return { getTile, getRow, getCol, getDiag1, getDiag2, setTile, tiles}
+    const setTile = (mark, row, col) => {
+        tiles[row][col] = mark
+        events.pub('board', tiles)
+    }
+
+    return { getTile, getRow, getCol, getDiag1, getDiag2, getBoard, setTile }
 })()
 
 const players = (() => {
@@ -16,7 +42,7 @@ const players = (() => {
 
     const make = (nombre) => {
         players.push({ 
-            name: nombre ? nombre : `Computadora ${players.length + 1}`, 
+            name: nombre ? nombre : `Jugador ${players.length + 1}`, 
             mark: !players.length ? 'X' : 'O'
         })
     }
@@ -26,108 +52,81 @@ const players = (() => {
     return { make, getMark, getName }
 })()
 
+players.make('MMejia')
+players.make('Andrea')
+
 const gameFlow = (() => {
-    let state = 0
-    const getState = () => state
-    const setState = (value) => { state = value }
+    let state
+    const setState = (num) => {
+        state = num
+        events.pub('state', state)
+    }
+    const nextState = () => { 
+        state = (state + 1) % 2 
+        return state
+    }
 
     function endGame(mark, row, col) {
         if (board.getRow(row).every(cell => cell === mark)) return true
         if (board.getCol(col).every(cell => cell === mark)) return true 
         if (board.getDiag1().every(cell => cell === mark) ||
             board.getDiag2().every(cell => cell === mark)) return true
+        if (!board.getBoard().includes('')) return true
 
         return false
     }
 
-    // function play() {
-    //     let round = 0
-    //     while(round < 10) {
-    //         if (round === 9) return window.alert('Es un empate')
-    //
-    //         const row = +window.prompt(`${players.getName(round % 2)} selecciona una fila`)
-    //         const col = +window.prompt(`${players.getName(round % 2)} selecciona una columna`)
-    //
-    //         if (board.getTile(row, col)) {
-    //             window.alert('la celda ya está ocupada')
-    //             continue
-    //
-    //         }
-    //
-    //         board.setTile(players.getMark(round % 2), row, col)
-    //
-    //         if (endGame(players.getMark(round % 2), row, col)) {
-    //             window.alert(`${players.getName(round % 2)} ganó.`)
-    //             return
-    //         }
-    //
-    //         round++
-    //     }
-    // }
-
-    return { getState, setState, endGame }
+    return { endGame , setState, nextState }
 })()
-// Implementación de la interfase
+
 const interfase = (() => {
-    const playersFormName = document.querySelectorAll('.jugador__input')
-    const playersSubmit = document.querySelector('.formulario button')
-    const playersGame = document.querySelectorAll('.jugadores .jugador')
-    const gameReset = document.querySelector('.header > button')
+    const gameBoard = document.querySelectorAll('.board > button')
+    const mainMessage = document.getElementById('mainMessage')
     
-    const tiles = document.querySelectorAll('.tile')
+    const drawBoard = (state = gameFlow.nextState()) => {
+        if (state === 2) {
+            mainMessage.textContent = '¿Quienes van a jugar?'
+            for (const tile of gameBoard) tile.disabled = true
+        }
+        if (state === 3) {
+            mainMessage.textContent = '¡Fin de la ronda!'
+            for (const tile of gameBoard) tile.disabled = true
+        }
 
-    const formVisible = () => {
-        document.querySelector('.formulario').classList.toggle('hidden')
-        document.querySelector('.jugadores').classList.toggle('hidden')
-    }
+        if (state < 2) {
+            mainMessage.textContent = `¡${players.getName(state)}, tu turno!`
+            for (const [index, tile] of gameBoard.entries()) {
+                const row = Math.floor(index / 3)
+                const col = index % 3
 
-    const toggelTurn = () => {
-        for(const jugador of playersGame) {
-            jugador.classList.toggle('jugador__turno')
+                if (!board.getTile(row, col)) {
+                    tile.textContent = players.getMark(state)
+                } else {
+                    tile.textContent = board.getTile(row, col)
+                    tile.disabled = true
+                }
+            }
         }
     }
+    events.sub('state', drawBoard)
 
-    const boardState = (bol = true, mark = '') => {
-        for(const tile of tiles) {
-            tile.disabled = bol
-            setTimeout(() => {
-                tile.lastElementChild.textContent = mark
-            }, tile.lastElementChild.textContent ? 0 : 300 )
-        }
-    }
-    boardState()
-
-    playersSubmit.addEventListener('click', () => {
-        players.make(playersFormName[0].value)
-        players.make(playersFormName[1].value)
-
-        playersGame[0].firstElementChild.textContent = players.getName(0)
-        playersGame[1].firstElementChild.textContent = players.getName(1)
-
-        formVisible()
-
-        boardState(false, players.getMark(0))
-    })
-
-    gameReset.addEventListener('click', () => {
-        boardState()
-        formVisible()
-    })
-
-    for(const tile of tiles) {
+    for (const tile of gameBoard) {
         tile.addEventListener('click', () => {
-            const row = +tile.getAttribute('data-tile')[0]
-            const col = +tile.getAttribute('data-tile')[2]
-            board.setTile(tile.lastElementChild.textContent, row, col)
-            gameFlow.endGame(tile.lastElementChild.textContent, row, col)
-            toggelTurn()
+            const row = tile.getAttribute('data-tile')[0]
+            const col = tile.getAttribute('data-tile')[2]
+            board.setTile(tile.textContent, row, col)
+            events.pub('state', gameFlow.nextState())
 
-            
-            tile.disabled = true
+            if (gameFlow.endGame(tile.textContent, row, col)) {
+                window.alert('final')
+            }
 
-            console.log(board.tiles)
-        } )
+        })
     }
 
+    return { drawBoard }
 })()
+
+gameFlow.setState(0)
+
 
