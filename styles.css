@@ -37,7 +37,7 @@ h2 {
 }
 
 .header {
-    padding: 1.2rem .5rem 1.2rem 1.5rem;
+    padding: 0.5rem 1.5rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -134,7 +134,7 @@ button {
 .board {
     padding: 2rem 1rem;
     display: grid;
-    grid-template-columns: repeat(3, clamp(100px, 30%, 200px));
+    grid-template-columns: repeat(3, clamp(70px, 30%, 170px));
     grid-template-rows: repeat(4, auto);
     place-content: center;
     gap: 0.5rem;
@@ -178,7 +178,8 @@ button {
 }
 
 ::backdrop {
-    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
 }
 .modal {
     text-align: center;
@@ -187,6 +188,8 @@ button {
     border: solid 1px var(--secondary);
     border-radius: 2rem;
     color: var(--text);
+    -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
 }
 .modal__btn {
     margin: 2rem 1rem 0;

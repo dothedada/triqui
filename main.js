@@ -16,7 +16,7 @@ const events = (() => {
 })()
 
 const board = (() => {
-    let tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
+    const tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
     events.pub('board', tiles)
 
     const getTile = (row, col) => tiles[row][col] 
@@ -24,16 +24,20 @@ const board = (() => {
     const getCol = col => tiles.map(arr => arr[col])
     const getDiag1 = () => tiles.map((arr, ind) => arr[ind])
     const getDiag2 = () => tiles.toReversed().map((arr, ind) => arr[ind])
-    const getBoard = () => tiles
     const setTile = (mark, row, col) => {
         tiles[row][col] = mark
         events.pub('board', tiles)
     }
     const reset = () => {
-        tiles = [ ['', '', ''], ['', '', ''], ['', '', ''] ]
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                tiles[i][j] = ''
+            }
+        }
+        console.log(tiles)
     }
 
-    return { getTile, getRow, getCol, getDiag1, getDiag2, getBoard, setTile, reset}
+    return { getTile, getRow, getCol, getDiag1, getDiag2, setTile, reset }
 })()
 
 const players = (() => {
@@ -66,26 +70,29 @@ const gameFlow = (() => {
 
     const start = () => set('start', 0, 0)
     const play = () => set('play', state.round, state.turn + 1)
-    const playerTurn = () => (state.turn - 1 ) % 2
-    const endRound = () => {
-        players.shuffleOrder()
-        set('endRound', state.round + 1, 0)
-    }
+    const playTurn = () => (state.turn - 1 ) % 2
+    const endRound = () => { set('endRound', state.round + 1, 0) }
     const endGame = () => set('endGame', state.round, 0)
 
     function evalMatch(mark, row, col) {
-        // victoria
-        if (board.getRow(row).every(cell => cell === mark)) return true
-        if (board.getCol(col).every(cell => cell === mark)) return true 
-        if (board.getDiag1().every(cell => cell === mark) ||
-            board.getDiag2().every(cell => cell === mark)) return true
-        // empate
-
-
-        return false
+        if (board.getRow(row).every(cell => cell === mark)) {
+            return { end: true, winnigGame: 'row', value: row }
+        }
+        if (board.getCol(col).every(cell => cell === mark)) {
+            return { end: true, winnigGame: 'col', value: col }
+        }
+        if (board.getDiag1().every(cell => cell === mark)) {
+            return { end: true, winnigGame: 'diag1', value: '' }
+        }
+        if (board.getDiag2().every(cell => cell === mark)) {
+            return { end: true, winnigGame: 'diag2', value: '' }
+        }
+        if (state.round === 9) {
+            return { end: true, winnigGame: 'tie', value: '' }
+        }
     }
 
-    return { start, play, playerTurn, endRound, endGame, evalMatch, state }
+    return { start, play, playTurn, endRound, endGame, evalMatch }
 })()
 
 const interfase = (() => {
@@ -99,30 +106,29 @@ const interfase = (() => {
     const gameBoard = document.querySelectorAll('.board > button')
     const mainMessage = document.getElementById('mainMessage')
     
-    const drawBoard = ( { moment, round, turn } ) => {
-        console.log ('moment:', moment, 'round:', round, 'turn', turn)
+    const modal = document.querySelector('.modal')
 
+    const drawBoard = ( { moment, round, turn } ) => {
         if (moment === 'start') {
             board.reset()
             playersForm.classList.remove('hidden')
             playersBoard.classList.add('hidden')
             mainMessage.textContent = '¿Quienes van a jugar?'
             for (const tile of gameBoard) tile.disabled = true
-
         }
 
         if (moment === 'play') {
             playersForm.classList.add('hidden')
             playersBoard.classList.remove('hidden')
 
-            mainMessage.textContent = `¡${players.getName(gameFlow.playerTurn())}, tu turno!`
+            mainMessage.textContent = `¡${players.getName(gameFlow.playTurn())}, tu turno!`
             for (const [index, tile] of gameBoard.entries()) {
                 const row = Math.floor(index / 3)
                 const col = index % 3
 
                 if (!board.getTile(row, col)) {
                     setTimeout(() => {
-                        tile.textContent = players.getMark(gameFlow.playerTurn())
+                        tile.textContent = players.getMark(gameFlow.playTurn())
                     }, 300)
                     tile.disabled = false
                 } else {
@@ -133,9 +139,16 @@ const interfase = (() => {
         }
         
         if (moment === 'endRound') {
+            modal.showModal()
+            board.reset()
             mainMessage.textContent = '¡Fin de la ronda!'
-            for (const tile of gameBoard) tile.disabled = true
+            for (const tile of gameBoard) {
+                if (!tile.disabled) tile.textContent = ''
+                tile.disabled = true
+            }
         }
+
+        console.log ('moment:', moment, 'round:', round, 'turn', turn)
     }
     events.sub('state', drawBoard)
 
@@ -151,11 +164,19 @@ const interfase = (() => {
         tile.addEventListener('click', () => {
             const row = tile.getAttribute('data-tile')[0]
             const col = tile.getAttribute('data-tile')[2]
+            tile.disabled = true
             board.setTile(tile.textContent, row, col)
 
-            if (gameFlow.evalMatch(tile.textContent, row, col)) {
-                window.alert('final')
-                gameFlow.start()
+            const victory = gameFlow.evalMatch(tile.textContent, row, col)
+            if (victory) {
+                tile.classList.add('tile--ganadora')
+                if (victory.winnigGame === 'row') {
+                    const winnerRow = Array.from(gameBoard)
+                        .filter(celda => celda.getAttribute('data-tile')[0] === row)
+                    winnerRow.forEach(til => til.classList.add('tile--ganadora'))
+                }
+
+                gameFlow.endRound()
                 return
             }
 
