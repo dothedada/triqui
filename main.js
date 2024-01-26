@@ -71,7 +71,11 @@ const gameFlow = (() => {
     const start = () => set('start', 0, 0)
     const play = () => set('play', state.round, state.turn + 1)
     const playTurn = () => (state.turn - 1 ) % 2
-    const endRound = () => { set('endRound', state.round + 1, 0) }
+    const getTurn = () => state.turn
+    const endRound = result => { 
+        set('endRound', state.round + 1, 0)
+        return { winner: result }
+    }
     const endGame = () => set('endGame', state.round, 0)
 
     function evalMatch(mark, row, col) {
@@ -87,12 +91,12 @@ const gameFlow = (() => {
         if (board.getDiag2().every(cell => cell === mark)) {
             return { end: true, winningGame: 'diag2', value: '' }
         }
-        if (state.round === 9) {
+        if (getTurn() === 9) {
             return { end: true, winningGame: 'tie', value: '' }
         }
     }
 
-    return { start, play, playTurn, endRound, endGame, evalMatch }
+    return { start, play, playTurn, getTurn, endRound, endGame, evalMatch }
 })()
 
 const interfase = (() => {
@@ -117,6 +121,7 @@ const interfase = (() => {
             for (const tile of gameBoard) {
                 tile.disabled = true
                 tile.textContent = ''
+                tile.classList.remove('tile--ganadora')
             }
         }
 
@@ -132,11 +137,6 @@ const interfase = (() => {
                 playersBoard.lastElementChild.classList.toggle('jugador__turno')
             }
             mainMessage.textContent = `¡${players.getName(gameFlow.playTurn())}, tu turno!`
-            
-
-
-
-
 
             for (const [index, tile] of gameBoard.entries()) {
                 const row = Math.floor(index / 3)
@@ -170,13 +170,10 @@ const interfase = (() => {
 
     const drawWinner = ({ winningGame, value }) => {
         const winningSet = () => {
-            if (winningGame === 'row') {
-                return document.querySelectorAll(`[data-tile^="${value}"]`)
+            if (!winningGame.match(/\d/)) {
+                const tile = winningGame === 'row' ? '^' : '$'
+                return document.querySelectorAll(`[data-tile${tile}="${value}"]`)
             }
-            if (winningGame === 'col') {
-                return document.querySelectorAll(`[data-tile$="${value}"]`)
-            }
-            
             const diagonal = []
             for (let i = 0; i < 3; i++) {
                 if (winningGame === 'diag1') {
@@ -184,24 +181,9 @@ const interfase = (() => {
                 }
                 if (winningGame === 'diag2') {
                     diagonal.push(document.querySelector(`[data-tile="${i}-${(i-2)*-1}"]`))
-                
                 }
-
             }
             return diagonal
-
-            // if (winningGame === 'diag1') {
-            //     return [
-            //         document.querySelector('[data-tile="0-0"]'),
-            //         document.querySelector('[data-tile="1-1"]'),
-            //         document.querySelector('[data-tile="2-2"]') ]
-            // }
-            // if (winningGame === 'diag2') {
-            //     return [
-            //         document.querySelector('[data-tile="0-2"]'),
-            //         document.querySelector('[data-tile="1-1"]'),
-            //         document.querySelector('[data-tile="2-0"]') ]
-            // }
         }
         for (const tile of winningSet()) {
             tile.classList.add('tile--ganadora')
@@ -225,6 +207,9 @@ const interfase = (() => {
 
             const victory = gameFlow.evalMatch(tile.textContent, row, col)
             if (victory) {
+                if (victory.winningGame === 'tie') {
+
+                }
                 drawWinner(victory)
                 gameFlow.endRound()
                 return
