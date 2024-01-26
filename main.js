@@ -176,18 +176,32 @@ const interfase = (() => {
             if (winningGame === 'col') {
                 return document.querySelectorAll(`[data-tile$="${value}"]`)
             }
-            if (winningGame === 'diag1') {
-                return [
-                    document.querySelector('[data-tile="0-0"]'),
-                    document.querySelector('[data-tile="1-1"]'),
-                    document.querySelector('[data-tile="2-2"]') ]
+            
+            const diagonal = []
+            for (let i = 0; i < 3; i++) {
+                if (winningGame === 'diag1') {
+                    diagonal.push(document.querySelector(`[data-tile="${i}-${i}"]`))
+                }
+                if (winningGame === 'diag2') {
+                    diagonal.push(document.querySelector(`[data-tile="${i}-${(i-2)*-1}"]`))
+                
+                }
+
             }
-            if (winningGame === 'diag2') {
-                return [
-                    document.querySelector('[data-tile="0-2"]'),
-                    document.querySelector('[data-tile="1-1"]'),
-                    document.querySelector('[data-tile="2-0"]') ]
-            }
+            return diagonal
+
+            // if (winningGame === 'diag1') {
+            //     return [
+            //         document.querySelector('[data-tile="0-0"]'),
+            //         document.querySelector('[data-tile="1-1"]'),
+            //         document.querySelector('[data-tile="2-2"]') ]
+            // }
+            // if (winningGame === 'diag2') {
+            //     return [
+            //         document.querySelector('[data-tile="0-2"]'),
+            //         document.querySelector('[data-tile="1-1"]'),
+            //         document.querySelector('[data-tile="2-0"]') ]
+            // }
         }
         for (const tile of winningSet()) {
             tile.classList.add('tile--ganadora')
