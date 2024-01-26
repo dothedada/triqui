@@ -124,7 +124,7 @@ button {
 }
 .jugador__turno {
     background-color: var(--background);
-    /* border: solid 1px var(--primary); */
+    border: solid 1px var(--primary);
     border-radius: 0.5rem;
 }
 .marca__actual {

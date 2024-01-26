@@ -34,7 +34,6 @@ const board = (() => {
                 tiles[i][j] = ''
             }
         }
-        console.log(tiles)
     }
 
     return { getTile, getRow, getCol, getDiag1, getDiag2, setTile, reset }
@@ -43,20 +42,21 @@ const board = (() => {
 const players = (() => {
     const players = []
 
-    const make = (nombre) => {
+    const make = name => {
         if (players.length > 1) return
         players.push({ 
-            name: nombre ? nombre : `Jugador ${players.length + 1}`, 
+            name: name ? name : `Jugador ${players.length + 1}`, 
             mark: !players.length ? 'X' : 'O',
             score: 0
         })
     }
-    const getMark = (player) => players[player].mark
-    const getName = (player) => players[player].name
-    const getScore = (player) => players[player].score
-    const setScore = (player) => players[player].score++
+    const getMark = player => players[player].mark
+    const getName = player => players[player].name
+    const getScore = player => players[player].score
+    const setScore = player => players[player].score++
+    const reset = () => { players.length = 0 }
 
-    return { make, getMark, getName, getScore, setScore }
+    return { make, getMark, getName, getScore, setScore, reset }
 })()
 
 const gameFlow = (() => {
@@ -76,19 +76,19 @@ const gameFlow = (() => {
 
     function evalMatch(mark, row, col) {
         if (board.getRow(row).every(cell => cell === mark)) {
-            return { end: true, winnigGame: 'row', value: row }
+            return { end: true, winningGame: 'row', value: row }
         }
         if (board.getCol(col).every(cell => cell === mark)) {
-            return { end: true, winnigGame: 'col', value: col }
+            return { end: true, winningGame: 'col', value: col }
         }
         if (board.getDiag1().every(cell => cell === mark)) {
-            return { end: true, winnigGame: 'diag1', value: '' }
+            return { end: true, winningGame: 'diag1', value: '' }
         }
         if (board.getDiag2().every(cell => cell === mark)) {
-            return { end: true, winnigGame: 'diag2', value: '' }
+            return { end: true, winningGame: 'diag2', value: '' }
         }
         if (state.round === 9) {
-            return { end: true, winnigGame: 'tie', value: '' }
+            return { end: true, winningGame: 'tie', value: '' }
         }
     }
 
@@ -114,14 +114,30 @@ const interfase = (() => {
             playersForm.classList.remove('hidden')
             playersBoard.classList.add('hidden')
             mainMessage.textContent = '¿Quienes van a jugar?'
-            for (const tile of gameBoard) tile.disabled = true
+            for (const tile of gameBoard) {
+                tile.disabled = true
+                tile.textContent = ''
+            }
         }
 
         if (moment === 'play') {
             playersForm.classList.add('hidden')
             playersBoard.classList.remove('hidden')
 
+            if (turn === 1) {
+                playersBoard.firstElementChild.classList.add('jugador__turno')
+                playersBoard.lastElementChild.classList.remove('jugador__turno')
+            } else {
+                playersBoard.firstElementChild.classList.toggle('jugador__turno')
+                playersBoard.lastElementChild.classList.toggle('jugador__turno')
+            }
             mainMessage.textContent = `¡${players.getName(gameFlow.playTurn())}, tu turno!`
+            
+
+
+
+
+
             for (const [index, tile] of gameBoard.entries()) {
                 const row = Math.floor(index / 3)
                 const col = index % 3
@@ -129,7 +145,7 @@ const interfase = (() => {
                 if (!board.getTile(row, col)) {
                     setTimeout(() => {
                         tile.textContent = players.getMark(gameFlow.playTurn())
-                    }, 300)
+                    }, 200)
                     tile.disabled = false
                 } else {
                     tile.textContent = board.getTile(row, col)
@@ -152,6 +168,32 @@ const interfase = (() => {
     }
     events.sub('state', drawBoard)
 
+    const drawWinner = ({ winningGame, value }) => {
+        const winningSet = () => {
+            if (winningGame === 'row') {
+                return document.querySelectorAll(`[data-tile^="${value}"]`)
+            }
+            if (winningGame === 'col') {
+                return document.querySelectorAll(`[data-tile$="${value}"]`)
+            }
+            if (winningGame === 'diag1') {
+                return [
+                    document.querySelector('[data-tile="0-0"]'),
+                    document.querySelector('[data-tile="1-1"]'),
+                    document.querySelector('[data-tile="2-2"]') ]
+            }
+            if (winningGame === 'diag2') {
+                return [
+                    document.querySelector('[data-tile="0-2"]'),
+                    document.querySelector('[data-tile="1-1"]'),
+                    document.querySelector('[data-tile="2-0"]') ]
+            }
+        }
+        for (const tile of winningSet()) {
+            tile.classList.add('tile--ganadora')
+        }
+    }
+
     playersSubmit.addEventListener('click', () => {
         players.make(playersInput[0].value)
         players.make(playersInput[1].value)
@@ -169,13 +211,7 @@ const interfase = (() => {
 
             const victory = gameFlow.evalMatch(tile.textContent, row, col)
             if (victory) {
-                tile.classList.add('tile--ganadora')
-                if (victory.winnigGame === 'row') {
-                    const winnerRow = Array.from(gameBoard)
-                        .filter(celda => celda.getAttribute('data-tile')[0] === row)
-                    winnerRow.forEach(til => til.classList.add('tile--ganadora'))
-                }
-
+                drawWinner(victory)
                 gameFlow.endRound()
                 return
             }
@@ -184,7 +220,13 @@ const interfase = (() => {
         })
     }
 
-    return { drawBoard }
+    document.querySelector('#resetButton').addEventListener('click', () => {
+        board.reset()
+        players.reset()
+        gameFlow.start()
+    })
+
+
 })()
 
 gameFlow.start()
