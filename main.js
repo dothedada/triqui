@@ -58,15 +58,7 @@ const players = (() => {
     const getByMark = mark => allPlayers.find(player => player.mark === mark).id
     const getByTurn = turn => allPlayers[turn] 
     
-    const shuffle = () => {
-        if(Math.floor(Math.random() * 2 )) {
-            [allPlayers[0], allPlayers[1]] = [allPlayers[1], allPlayers[0]];
-            console.log('rand')
-            console.log(allPlayers)
-        }
-    }
-
-    return { make, readyToPlay, getById, getByMark, getByTurn, shuffle }
+    return { make, readyToPlay, getById, getByMark, getByTurn }
 })()
 
 //módulo de juego (evaluar tablero, declarar victoria de rondas, declarar victoria del juego)
@@ -94,37 +86,32 @@ const gameFlow = (() => {
     const roundResult = (mark, row, col) => {
         let restart = false
 
-        console.log(stats.turn)
         if (stats.turn === 8) {
             set('scoreTie')
             restart = true
         }
         if (board.getRow(row).every(tile => tile === mark)) {
-            events.publish('winningGame', { game: 'row', value: row })
             set(`scorePlayer${players.getByMark(mark)}`)
+            events.publish('winningGame', { game: 'row', winner: mark ,value: row })
             restart = true
         }
         if (board.getCol(col).every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'col', value: col } )
+            events.publish('winningGame', { game: 'col', winner: mark ,value: row })
             restart = true
         }
         if (board.getDiag1().every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'diag1', value: ''} )
+            events.publish('winningGame', { game: 'diag1', winner: mark ,value: row })
             restart = true
         }
         if (board.getDiad2().every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'diag2', value: ''} )
+            events.publish('winningGame', { game: 'diag2', winner: mark ,value: row })
             restart = true
         }
 
-        if (restart) { 
-            if (prompt('seguir', 'y') === 'y') board.reset()
-        } else {
-            gameFlow.set('turn')
-        }
+        if (!restart) gameFlow.set('turn')
     }
 
     const gameResult = ( {scorePlayer1, scorePlayer2, round} ) => {
@@ -152,6 +139,7 @@ const interfase = (() => {
     const playersBoard = document.querySelector('.jugadores')
     const gameBoard = document.querySelectorAll('.board > button')
     const message = document.querySelector('#mainMessage')
+    const modal = document.querySelector('#finPartida')
 
     const startGame = (readyToPlay = false) => {
         if (readyToPlay) {
@@ -169,7 +157,7 @@ const interfase = (() => {
     startGame()
     events.subscribe('readyToPlay', startGame)
 
-    const gameStats = ({ scorePlayer1, scorePlayer2 }) => {
+    const gameStats = ({ turn, scorePlayer1, scorePlayer2 }) => {
         const player1 = document.querySelectorAll('.jugador')[0]
         const player2 = document.querySelectorAll('.jugador')[1]
         
@@ -178,6 +166,15 @@ const interfase = (() => {
 
         player1.lastElementChild.textContent = `${scorePlayer1} de 5 juegos`
         player2.lastElementChild.textContent = `${scorePlayer2} de 5 juegos`
+        
+        if (turn === 0) {
+            player1.classList.add('jugador__turno')
+            player2.classList.remove('jugador__turno')
+        } else {
+            player1.classList.toggle('jugador__turno')
+            player2.classList.toggle('jugador__turno')
+        }
+
     }
     events.subscribe('stats', gameStats)
 
@@ -205,8 +202,8 @@ const interfase = (() => {
     const drawWinner = ( { game, value } ) => {
         const winningTiles = (() => {
             if (!game.match(/\d/)) {
-                const tile = game === 'row' ? '^' : '$'
-                return document.querySelectorAll(`[data-tile${tile}="${value}"]`)
+                const direction = game === 'row' ? '^' : '$'
+                return document.querySelectorAll(`[data-tile${direction}="${value}"]`)
             }
             const diagonal = []
             for (let i = 0; i < 3; i++) {
@@ -224,6 +221,8 @@ const interfase = (() => {
             tile.classList.add('tile--ganadora')
             console.log(tile)
         }
+
+        modal.showModal()
     }
     events.subscribe('winningGame', drawWinner)
 
