@@ -45,7 +45,7 @@
         </form>
 
         <div class="jugadores hidden">
-            <div class="jugador">
+            <div class="jugador jugador__turno">
                 <div class="jugador__nombre">jugador 1</div>
                 <div>
                     <span class="marca__victorias">X</span>
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="versus">Vs.</div>
-            <div class="jugador jugador__turno">
+            <div class="jugador">
                 <div class="jugador__nombre">jugador 2</div>
                 <div>
                     <span class="marca__victorias">O O</span>
@@ -108,11 +108,10 @@
         <h2 id="mainMessage"></h2>
     </main>
     <dialog id="finPartida" class="modal">
-        <h2>Ganaste esta ronda</h2>
-        <p>estas a <span class="">1</span> victoria de ganar el juego</p>
-
-        <button class="modal__btn modal__btn--shy">Siguiente ronda</button>
-        <button class="modal__btn">Volver a jugar</button>
+        <h2></h2>
+        <p></p>
+        <button id="nextRound" class="modal__btn">Siguiente ronda</button>
+        <button id="endGame" class="modal__btn modal__btn--shy">Reiniciar el juego</button>
     </dialog>
 
 </body>

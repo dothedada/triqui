@@ -196,7 +196,7 @@ button {
     padding: 0.5rem 1.5rem;
     border: solid 2px var(--accent);
     border-radius: 0.4rem;
-    background: none;
+    background: hsl(105 40% 2% / 0.8);
     font-family: var(--font-p);
     color: var(--accent);
     transition: all 0.2s ease;

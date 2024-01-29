@@ -15,7 +15,6 @@ const events = (() => {
     return { publish, subscribe}
 })()
 
-//Módulo del tablero (dibujo del tablero y reporte del estado del tablero, )
 const board = (() => {
     let grid = [['','',''],['','',''],['','','']]
     
@@ -36,10 +35,9 @@ const board = (() => {
         events.publish('board', grid)
     }
 
-    return { getTile, getRow, getCol, getDiag1, getDiad2, setTile, reset}
+    return { getTile, getRow, getCol, getDiag1, getDiad2, setTile, reset, grid}
 })()
 
-//Módulo de jugadores (nombres, signos y puntajes acumulados, asignar turnos)
 const players = (() => {
     const allPlayers = []
 
@@ -50,18 +48,18 @@ const players = (() => {
             name: name ? name : `Jugador@ ${allPlayers.length +1}`,
             mark: !allPlayers.length ? 'X' : 'O',
         })
-        events.publish('readyToPlay', readyToPlay())
+        events.publish('readyToPlay', true)
     }
 
     const readyToPlay = () => allPlayers.length === 2
     const getById = id => allPlayers.find(player => player.id === id)
-    const getByMark = mark => allPlayers.find(player => player.mark === mark).id
+    const getByMark = mark => allPlayers.find(player => player.mark === mark)
     const getByTurn = turn => allPlayers[turn] 
-    
-    return { make, readyToPlay, getById, getByMark, getByTurn }
+    const reset = () => { allPlayers.length = 0 }
+
+    return { make, readyToPlay, getById, getByMark, getByTurn, reset }
 })()
 
-//módulo de juego (evaluar tablero, declarar victoria de rondas, declarar victoria del juego)
 const gameFlow = (() => {
     const stats = {
         turn: 0,
@@ -72,7 +70,7 @@ const gameFlow = (() => {
     }
 
     const get = (stat) => stats[stat]
-    const getTurn = () => stats.turn % 2 
+    const getPlayerTurn = () => stats.turn % 2 
 
     const set = (stat) => {
         if (stat.match(/^score/)) {
@@ -82,55 +80,73 @@ const gameFlow = (() => {
         stats[stat]++
         events.publish('stats', stats)
     }
+
+    const reset = () => {
+        for (const key in stats) stats[key] = 0 
+    }
     
     const roundResult = (mark, row, col) => {
-        let restart = false
-
         if (stats.turn === 8) {
             set('scoreTie')
-            restart = true
+            events.publish('winningGame', {game: 'tie', winner: '' ,value: '' })
+            return
         }
         if (board.getRow(row).every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'row', winner: mark ,value: row })
-            restart = true
+            set(`scorePlayer${players.getByMark(mark).id}`)
+            events.publish('winningGame', {game: 'row', winner: mark ,value: row })
+            return
         }
         if (board.getCol(col).every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'col', winner: mark ,value: row })
-            restart = true
+            set(`scorePlayer${players.getByMark(mark).id}`)
+            events.publish('winningGame', {game: 'col', winner: mark ,value: col })
+            return
         }
         if (board.getDiag1().every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'diag1', winner: mark ,value: row })
-            restart = true
+            set(`scorePlayer${players.getByMark(mark).id}`)
+            events.publish('winningGame', {game: 'diag1', winner: mark ,value: ''})
+            return
         }
         if (board.getDiad2().every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark)}`)
-            events.publish('winningGame', { game: 'diag2', winner: mark ,value: row })
-            restart = true
+            set(`scorePlayer${players.getByMark(mark).id}`)
+            events.publish('winningGame', {game: 'diag2', winner: mark ,value: ''})
+            return
         }
 
-        if (!restart) gameFlow.set('turn')
+        gameFlow.set('turn')
     }
 
     const gameResult = ( {scorePlayer1, scorePlayer2, round} ) => {
         console.table(stats)
+        let winner
+        let score
         if (scorePlayer1 === 3){
-            console.log('ganó', players.getById(1).name)
+            winner = players.getById(1).name
+            score = 3
         }
         if (scorePlayer2 === 3){
-            console.log('ganó', players.getById(2).name)
+            winner = players.getById(2).name
+            score = 3
         }
         if (round === 5) {
-            if (scorePlayer1 > scorePlayer2) console.log('ganó', players.getById(1).name)
-            if (scorePlayer1 < scorePlayer2) console.log('ganó', players.getById(2).name)
-            if (scorePlayer1 === scorePlayer2) console.log('empate')
+            if (scorePlayer1 > scorePlayer2) {
+                winner = players.getById(1).name
+                score = scorePlayer1
+            }
+            if (scorePlayer1 < scorePlayer2) {
+                winner = players.getById(2).name
+                score = scorePlayer2
+            }
+            if (scorePlayer1 === scorePlayer2) {
+                winner = 'tie'
+                score = ''
+            } 
         }
+        if (winner) events.publish('gameWinner', { winner, score })
     }
     events.subscribe('stats', gameResult)
 
-    return { get, getTurn, set, roundResult }
+
+    return { get, getPlayerTurn, set, reset, roundResult }
 })()
 
 //Módulo del juego () (tomar nombres y registrarlos, correr turnos )
@@ -167,7 +183,7 @@ const interfase = (() => {
         player1.lastElementChild.textContent = `${scorePlayer1} de 5 juegos`
         player2.lastElementChild.textContent = `${scorePlayer2} de 5 juegos`
         
-        if (turn === 0) {
+        if(gameFlow.get('turn') === 0) {
             player1.classList.add('jugador__turno')
             player2.classList.remove('jugador__turno')
         } else {
@@ -189,22 +205,28 @@ const interfase = (() => {
 
             if (!board.getTile(row,col)) {
                 tile.disabled = false
-                tile.textContent = players.getByTurn(gameFlow.getTurn()).mark
+                tile.textContent = players.getByTurn(gameFlow.getPlayerTurn()).mark
             }
             
-            message.textContent = `${players.getByTurn(gameFlow.getTurn()).name}, tu turno...`
+            message.textContent = `${players.getByTurn(gameFlow.getPlayerTurn()).name}, tu turno...`
         }
     }
     drawBoard()
     events.subscribe('readyToPlay', drawBoard)
     events.subscribe('board', drawBoard)
 
-    const drawWinner = ( { game, value } ) => {
+    const drawWinner = ( { game, winner, value } ) => {
+        if (game === 'tie') {
+            modal.showModal()
+            return
+        }
+
         const winningTiles = (() => {
             if (!game.match(/\d/)) {
                 const direction = game === 'row' ? '^' : '$'
                 return document.querySelectorAll(`[data-tile${direction}="${value}"]`)
             }
+
             const diagonal = []
             for (let i = 0; i < 3; i++) {
                 if (game === 'diag1') {
@@ -217,16 +239,14 @@ const interfase = (() => {
             return diagonal
         })()
 
-        for (const tile of winningTiles) {
-            tile.classList.add('tile--ganadora')
-            console.log(tile)
-        }
+        for (const tile of winningTiles) tile.classList.add('tile--ganadora')
+        modal.querySelector('h2').textContent = `¡Ganaste ${players.getByMark(winner).name}!`
+        modal.querySelector('p').textContent = `${players.getByMark(winner).name}`
 
         modal.showModal()
     }
     events.subscribe('winningGame', drawWinner)
-
-
+    //
     // botones
     document.querySelector('#submit').addEventListener('click', () => {
         players.make(document.querySelector('#player1').value)
@@ -243,4 +263,22 @@ const interfase = (() => {
             board.setTile(tileBtn.textContent, row, col)
         })
     }
+
+    document.querySelector('#nextRound').addEventListener('click', () => {
+        board.reset()
+        modal.close()
+        for (const tile of gameBoard) tile.classList.remove('tile--ganadora')
+    })
+
+    document.querySelector('#endGame').addEventListener('click', () => {
+        board.reset()
+        gameFlow.reset()
+        players.reset()
+        for (const tile of gameBoard) {
+            tile.classList.remove('tile--ganadora')
+            tile.textContent = ''
+        }
+        events.publish('readyToPlay', false)
+        modal.close()
+    })
 })()
