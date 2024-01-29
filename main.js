@@ -35,7 +35,7 @@ const board = (() => {
         events.publish('board', grid)
     }
 
-    return { getTile, getRow, getCol, getDiag1, getDiad2, setTile, reset, grid}
+    return { getTile, getRow, getCol, getDiag1, getDiad2, setTile, reset }
 })()
 
 const players = (() => {
@@ -80,76 +80,77 @@ const gameFlow = (() => {
         stats[stat]++
         events.publish('stats', stats)
     }
-
-    const reset = () => {
-        for (const key in stats) stats[key] = 0 
-    }
+    const reset = () => { for (const key in stats) stats[key] = 0 }
     
     const roundResult = (mark, row, col) => {
+        const result = {}
+        if (stats.turn === 8) {
+            result.roundWinner = 'tie'
+        }
         if (board.getRow(row).every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark).id}`)
-            events.publish('winningGame', {game: 'row', winner: mark ,value: row })
-            return
+            result.game = 'row'
+            result.value = row
         }
         if (board.getCol(col).every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark).id}`)
-            events.publish('winningGame', {game: 'col', winner: mark ,value: col })
-            return
+            result.game = 'col'
+            result.value = col
         }
         if (board.getDiag1().every(tile => tile === mark)) {
-            set(`scorePlayer${players.getByMark(mark).id}`)
-            events.publish('winningGame', {game: 'diag1', winner: mark ,value: ''})
-            return
+            result.game = 'diag1'
+            result.value = ''
         }
         if (board.getDiad2().every(tile => tile === mark)) {
+            result.game = 'diag2'
+            result.value = ''
+        }
+        if (result.game) {
+            result.roundWinner = `${players.getByMark(mark).name}`
+            events.publish('winningGame', result)
             set(`scorePlayer${players.getByMark(mark).id}`)
-            events.publish('winningGame', {game: 'diag2', winner: mark ,value: ''})
             return
         }
-        if (stats.turn === 8) {
+        if (result.roundWinner === 'tie') {
+            events.publish('winningGame', result)
             set('scoreTie')
-            events.publish('winningGame', {game: 'tie', winner: '' ,value: '' })
             return
         }
-
-        gameFlow.set('turn')
+        set('turn')
     }
 
     const gameResult = ( {scorePlayer1, scorePlayer2, round} ) => {
-        console.table(stats)
-        let winner
+        let gameWinner
         let score
         if (scorePlayer1 === 3){
-            winner = players.getById(1).name
+            gameWinner = players.getById(1).name
             score = 3
         }
         if (scorePlayer2 === 3){
-            winner = players.getById(2).name
+            gameWinner = players.getById(2).name
             score = 3
         }
         if (round === 5) {
             if (scorePlayer1 > scorePlayer2) {
-                winner = players.getById(1).name
+                gameWinner = players.getById(1).name
                 score = scorePlayer1
             }
             if (scorePlayer1 < scorePlayer2) {
-                winner = players.getById(2).name
+                gameWinner = players.getById(2).name
                 score = scorePlayer2
             }
             if (scorePlayer1 === scorePlayer2) {
-                winner = 'tie'
+                gameWinner = 'tie'
                 score = ''
             } 
         }
-        if (winner) console.log ('carajo')
+        if (gameWinner) {
+            events.publish('winningGame', { gameWinner, score })
+        }
     }
     events.subscribe('stats', gameResult)
-
 
     return { get, getPlayerTurn, set, reset, roundResult }
 })()
 
-//Módulo del juego () (tomar nombres y registrarlos, correr turnos )
 const interfase = (() => {
     const playersInput = document.querySelector('.formulario')
     const playersBoard = document.querySelector('.jugadores')
@@ -176,7 +177,6 @@ const interfase = (() => {
     const gameStats = ({ scorePlayer1, scorePlayer2 }) => {
         const player1 = document.querySelectorAll('.jugador')[0]
         const player2 = document.querySelectorAll('.jugador')[1]
-        
         player1.firstElementChild.textContent = players.getById(1).name
         player1.lastElementChild.textContent = 'X '.repeat(scorePlayer1)
         player2.firstElementChild.textContent = players.getById(2).name
@@ -192,15 +192,14 @@ const interfase = (() => {
     }
     events.subscribe('stats', gameStats)
 
-    // tablero
     const drawBoard = (readyToPlay = false) => {
         for (const tile of gameBoard) {
             const row = tile.getAttribute('data-tile')[0]
             const col = tile.getAttribute('data-tile')[2]
             tile.disabled = true
             message.textContent = '¿Quienes van a jugar?'
-            if (!readyToPlay) continue 
 
+            if (!readyToPlay) continue 
             if (!board.getTile(row,col)) {
                 tile.disabled = false
                 tile.textContent = players.getByTurn(gameFlow.getPlayerTurn()).mark
@@ -213,36 +212,50 @@ const interfase = (() => {
     events.subscribe('readyToPlay', drawBoard)
     events.subscribe('board', drawBoard)
 
-    const drawWinner = ( { game, winner, value } ) => {
-        let h2 = game === 'tie' ? 'Empate' : `¡Ganaste ${players.getByMark(winner).name}!`
-        let par = game === 'tie' ? '' : 'Demuestra que no fue suerte...'
-
-        const winningTiles = (() => {
+    const drawWinner = ( { game, value } ) => {
+        if (!game) return
+        const getWinTiles = () => {
             if (!game.match(/\d/)) {
-                const direction = game === 'row' ? '^' : '$'
-                return document.querySelectorAll(`[data-tile${direction}="${value}"]`)
+                const dir = game === 'row' ? '^' : '$'
+                return document.querySelectorAll(`[data-tile${dir}="${value}"]`)
             }
 
-            const diagonal = []
+            const diag = []
             for (let i = 0; i < 3; i++) {
                 if (game === 'diag1') {
-                    diagonal.push(document.querySelector(`[data-tile="${i}-${i}"]`))
+                    diag.push(document.querySelector(`[data-tile="${i}-${i}"]`))
                 }
                 if (game === 'diag2') {
-                    diagonal.push(document.querySelector(`[data-tile="${i}-${(i-2)*-1}"]`))
+                    diag.push(document.querySelector(`[data-tile="${i}-${(i-2)*-1}"]`))
                 }
             }
-            return diagonal
-        })()
-
-        for (const tile of winningTiles) tile.classList.add('tile--ganadora')
-
-        modal.querySelector('h2').textContent = h2
-        modal.querySelector('p').textContent = par
-
-        modal.showModal()
+            return diag
+        }
+        for (const tile of getWinTiles()) tile.classList.add('tile--ganadora')
     }
     events.subscribe('winningGame', drawWinner)
+
+    const drawModal = ({ roundWinner, gameWinner, score }) => {
+        if (roundWinner) modal.showModal()
+        let modalWinner = gameWinner ? gameWinner : roundWinner
+        if (modalWinner === 'tie') modalWinner = 'Empate'
+
+        if (gameWinner) {
+            modal.querySelector('#nextRound').classList.add('hidden')
+            modal.querySelector('.reset').classList.remove('modal__btn--shy')
+            modal.querySelector('h2').textContent = `¡Ganaste el juego ${modalWinner}!`
+            modal.querySelector('p').textContent = '♪┏(・o・)┛♪┗ ( ・o・) ┓♪ '
+        } else {
+            modal.querySelector('#nextRound').classList.remove('hidden')
+            modal.querySelector('.reset').classList.add('modal__btn--shy')
+            modal.querySelector('h2').textContent = `¡Ganaste la ronda ${modalWinner}!`
+            modal.querySelector('p').textContent = 'veamos en la siguiente ronda si fue suerte...'
+        }
+    }
+    events.subscribe('winningGame', drawModal)
+
+
+
     
     document.querySelector('#submit').addEventListener('click', () => {
         players.make(document.querySelector('#player1').value)
