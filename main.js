@@ -26,11 +26,9 @@ const board = (() => {
     const getDiad2 = () => grid.toReversed().map((row, index) => row[index])
 
     const setTile = (mark, row, col) => {
-        if(grid[row][col]) return false
         grid[row][col] = mark
+        gameFlow.roundResult(mark, row, col)
         events.publish('board', grid)
-        events.publish('roundResult', [mark, row, col])
-        return true
     }
     
     const reset = () => {
@@ -39,6 +37,7 @@ const board = (() => {
                 grid[i][j] = ''
             }
         }
+        events.publish('board', grid)
     }
 
     return { getTile, getRow, getCol, getDiag1, getDiad2, setTile, reset}
@@ -93,8 +92,7 @@ const gameFlow = (() => {
         events.publish('stats', stats)
     }
     
-    const roundResult = (valuesArray) => {
-        const [mark, row, col] = valuesArray
+    const roundResult = (mark, row, col) => {
 
         let restart = false
 
@@ -120,10 +118,9 @@ const gameFlow = (() => {
         }
 
         if (restart) { 
-            if (prompt('seguir', 'parar') === 'seguir') board.reset()
+            if (prompt('seguir', 'y') === 'y') board.reset()
         }
     }
-    events.subscribe('roundResult', roundResult)
 
     const gameResult = ( {scorePlayer1, scorePlayer2, round} ) => {
         console.table(stats)
@@ -141,13 +138,13 @@ const gameFlow = (() => {
     }
     events.subscribe('stats', gameResult)
 
-    return { get, set }
+    return { get, set, roundResult }
 })()
 
 //Módulo del juego () (tomar nombres y registrarlos, correr turnos )
 const interfase = (() => {
     const drawBoard = (grid) => {
-        console.log(grid)
+        console.table(grid)
     }
     events.subscribe('board', drawBoard)
 
@@ -164,9 +161,9 @@ const interfase = (() => {
         const cell = prompt(`${players.allPlayers[round].name}, selecciona la celda`)
         const [row, col] = [cell[0], cell[1]];
         
-        if (board.setTile(players.allPlayers[round].mark, row, col)) {
-            board.setTile(players.allPlayers[round].mark, row, col)
+        if (!board.getTile(row, col)) {
             gameFlow.set('turn')
+            board.setTile(players.allPlayers[round].mark, row, col)
         }
     }
 
