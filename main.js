@@ -17,7 +17,7 @@ const events = (() => {
 
 //Módulo del tablero (dibujo del tablero y reporte del estado del tablero, )
 const board = (() => {
-    const grid = [['','',''],['','',''],['','','']]
+    let grid = [['','',''],['','',''],['','','']]
     
     const getTile = (row, col) => grid[row][col]
     const getRow = row => grid[row]
@@ -32,11 +32,7 @@ const board = (() => {
     }
     
     const reset = () => {
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                grid[i][j] = ''
-            }
-        }
+        grid = [['','',''],['','',''],['','','']]
         events.publish('board', grid)
     }
 
@@ -53,12 +49,13 @@ const players = (() => {
             id: !allPlayers.length ? 1 : 2,
             name: name ? name : `Jugador@ ${allPlayers.length +1}`,
             mark: !allPlayers.length ? 'X' : 'O',
-        } )
+        })
+        events.publish('readyToPlay', readyToPlay())
     }
 
+    const readyToPlay = () => allPlayers.length === 2
     const getById = id => allPlayers.find(player => player.id === id)
     const getByMark = mark => allPlayers.find(player => player.mark === mark).id
-    // const playerByMark = mark => allPlayers.indexOf(player => player.mark === mark)
     
     const shuffle = () => {
         if(Math.floor(Math.random() * 2 )) {
@@ -68,7 +65,7 @@ const players = (() => {
         }
     }
 
-    return { make, getById, getByMark, shuffle, allPlayers}
+    return { make, readyToPlay, getById, getByMark, shuffle }
 })()
 
 //módulo de juego (evaluar tablero, declarar victoria de rondas, declarar victoria del juego)
@@ -93,7 +90,6 @@ const gameFlow = (() => {
     }
     
     const roundResult = (mark, row, col) => {
-
         let restart = false
 
         if (stats.turn > 8) {
@@ -143,45 +139,50 @@ const gameFlow = (() => {
 
 //Módulo del juego () (tomar nombres y registrarlos, correr turnos )
 const interfase = (() => {
-    
-
-
+    const playersInput = document.querySelector('.formulario')
+    const playersSubmit = document.querySelector('#submit')
+    const playersBoard = document.querySelector('.jugadores')
     const gameBoard = document.querySelectorAll('.board > button')
-    const gameMessage = document.querySelector('#mainMessage')
-    const play = false
 
-    const getPlayers = () => {
-        players.make(prompt('player1'))
-        players.make(prompt('player2'))
+    const startGame = readyToPlay => {
+        if (readyToPlay) {
+            playersInput.classList.add('hidden')
+            playersInput.setAttribute('aria-hidden', 'true')
+            playersBoard.classList.remove('hidden')
+            playersBoard.removeAttribute('aria-hidden')
+        } else {
+            playersInput.classList.remove('hidden')
+            playersInput.removeAttribute('aria-hidden')
+            playersBoard.classList.add('hidden')
+            playersBoard.setAttribute('aria-hidden', 'true')
 
-
-
-        console.log(players.allPlayers)
-    }
-    getPlayers()
-
-    const drawBoard = (grid) => {
-        console.table(grid)
-        for (const tile of gameBoard) {
-            //
         }
     }
-    events.subscribe('board', drawBoard)
+    events.subscribe('readyToPlay', startGame)
 
-    const playerMove = () => {
-        const round = gameFlow.get('turn') % 2
-        const cell = prompt(`${players.allPlayers[round].name}, selecciona la celda`)
-        const [row, col] = [cell[0], cell[1]];
+    const gameStats = ({ scorePlayer1, scorePlayer2 }) => {
+        const player1 = document.querySelectorAll('.jugador')[0]
+        const player2 = document.querySelectorAll('.jugador')[1]
         
-        if (!board.getTile(row, col)) {
-            gameFlow.set('turn')
-            board.setTile(players.allPlayers[round].mark, row, col)
-        }
-    }
+        player1.firstElementChild.textContent = players.getById(1).name
+        player2.firstElementChild.textContent = players.getById(2).name
 
-    while (gameFlow.get('turn') < 9) {
-        playerMove()
+        player1.lastElementChild.textContent = `${scorePlayer1} / 5`
+        player2.lastElementChild.textContent = `${scorePlayer2} / 5`
     }
+    events.subscribe('stats', gameStats)
+
+    // tablero
+
+
+    // botones
+    playersSubmit.addEventListener('click', () => {
+        players.make(document.querySelector('#player1').value)
+        players.make(document.querySelector('#player2').value)
+        board.reset()
+        gameStats({ scorePlayer1: 0, scorePlayer2: 0 })
+    })
+
 
 })()
 
