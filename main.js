@@ -143,18 +143,30 @@ const gameFlow = (() => {
 
 //Módulo del juego () (tomar nombres y registrarlos, correr turnos )
 const interfase = (() => {
-    const drawBoard = (grid) => {
-        console.table(grid)
-    }
-    events.subscribe('board', drawBoard)
+    
+
+
+    const gameBoard = document.querySelectorAll('.board > button')
+    const gameMessage = document.querySelector('#mainMessage')
+    const play = false
 
     const getPlayers = () => {
         players.make(prompt('player1'))
         players.make(prompt('player2'))
 
+
+
         console.log(players.allPlayers)
     }
     getPlayers()
+
+    const drawBoard = (grid) => {
+        console.table(grid)
+        for (const tile of gameBoard) {
+            //
+        }
+    }
+    events.subscribe('board', drawBoard)
 
     const playerMove = () => {
         const round = gameFlow.get('turn') % 2
