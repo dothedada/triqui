@@ -56,6 +56,7 @@ const players = (() => {
     const readyToPlay = () => allPlayers.length === 2
     const getById = id => allPlayers.find(player => player.id === id)
     const getByMark = mark => allPlayers.find(player => player.mark === mark).id
+    const getByTurn = turn => allPlayers[turn] 
     
     const shuffle = () => {
         if(Math.floor(Math.random() * 2 )) {
@@ -65,7 +66,7 @@ const players = (() => {
         }
     }
 
-    return { make, readyToPlay, getById, getByMark, shuffle }
+    return { make, readyToPlay, getById, getByMark, getByTurn, shuffle }
 })()
 
 //módulo de juego (evaluar tablero, declarar victoria de rondas, declarar victoria del juego)
@@ -79,6 +80,7 @@ const gameFlow = (() => {
     }
 
     const get = (stat) => stats[stat]
+    const getTurn = () => stats.turn % 2 
 
     const set = (stat) => {
         if (stat.match(/^score/)) {
@@ -92,29 +94,36 @@ const gameFlow = (() => {
     const roundResult = (mark, row, col) => {
         let restart = false
 
-        if (stats.turn > 8) {
+        console.log(stats.turn)
+        if (stats.turn === 8) {
             set('scoreTie')
             restart = true
         }
         if (board.getRow(row).every(tile => tile === mark)) {
+            events.publish('winningGame', { game: 'row', value: row })
             set(`scorePlayer${players.getByMark(mark)}`)
             restart = true
         }
         if (board.getCol(col).every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
+            events.publish('winningGame', { game: 'col', value: col } )
             restart = true
         }
         if (board.getDiag1().every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
+            events.publish('winningGame', { game: 'diag1', value: ''} )
             restart = true
         }
         if (board.getDiad2().every(tile => tile === mark)) {
             set(`scorePlayer${players.getByMark(mark)}`)
+            events.publish('winningGame', { game: 'diag2', value: ''} )
             restart = true
         }
 
         if (restart) { 
             if (prompt('seguir', 'y') === 'y') board.reset()
+        } else {
+            gameFlow.set('turn')
         }
     }
 
@@ -134,17 +143,17 @@ const gameFlow = (() => {
     }
     events.subscribe('stats', gameResult)
 
-    return { get, set, roundResult }
+    return { get, getTurn, set, roundResult }
 })()
 
 //Módulo del juego () (tomar nombres y registrarlos, correr turnos )
 const interfase = (() => {
     const playersInput = document.querySelector('.formulario')
-    const playersSubmit = document.querySelector('#submit')
     const playersBoard = document.querySelector('.jugadores')
     const gameBoard = document.querySelectorAll('.board > button')
+    const message = document.querySelector('#mainMessage')
 
-    const startGame = readyToPlay => {
+    const startGame = (readyToPlay = false) => {
         if (readyToPlay) {
             playersInput.classList.add('hidden')
             playersInput.setAttribute('aria-hidden', 'true')
@@ -155,9 +164,9 @@ const interfase = (() => {
             playersInput.removeAttribute('aria-hidden')
             playersBoard.classList.add('hidden')
             playersBoard.setAttribute('aria-hidden', 'true')
-
         }
     }
+    startGame()
     events.subscribe('readyToPlay', startGame)
 
     const gameStats = ({ scorePlayer1, scorePlayer2 }) => {
@@ -167,27 +176,72 @@ const interfase = (() => {
         player1.firstElementChild.textContent = players.getById(1).name
         player2.firstElementChild.textContent = players.getById(2).name
 
-        player1.lastElementChild.textContent = `${scorePlayer1} / 5`
-        player2.lastElementChild.textContent = `${scorePlayer2} / 5`
+        player1.lastElementChild.textContent = `${scorePlayer1} de 5 juegos`
+        player2.lastElementChild.textContent = `${scorePlayer2} de 5 juegos`
     }
     events.subscribe('stats', gameStats)
 
     // tablero
+    const drawBoard = (readyToPlay = false) => {
+        for (const tile of gameBoard) {
+            const row = tile.getAttribute('data-tile')[0]
+            const col = tile.getAttribute('data-tile')[2]
+            tile.disabled = true
+            message.textContent = '¿Quienes van a jugar?'
+            if (!readyToPlay) continue 
+
+            if (!board.getTile(row,col)) {
+                tile.disabled = false
+                tile.textContent = players.getByTurn(gameFlow.getTurn()).mark
+            }
+            
+            message.textContent = `${players.getByTurn(gameFlow.getTurn()).name}, tu turno...`
+        }
+    }
+    drawBoard()
+    events.subscribe('readyToPlay', drawBoard)
+    events.subscribe('board', drawBoard)
+
+    const drawWinner = ( { game, value } ) => {
+        const winningTiles = (() => {
+            if (!game.match(/\d/)) {
+                const tile = game === 'row' ? '^' : '$'
+                return document.querySelectorAll(`[data-tile${tile}="${value}"]`)
+            }
+            const diagonal = []
+            for (let i = 0; i < 3; i++) {
+                if (game === 'diag1') {
+                    diagonal.push(document.querySelector(`[data-tile="${i}-${i}"]`))
+                }
+                if (game === 'diag2') {
+                    diagonal.push(document.querySelector(`[data-tile="${i}-${(i-2)*-1}"]`))
+                }
+            }
+            return diagonal
+        })()
+
+        for (const tile of winningTiles) {
+            tile.classList.add('tile--ganadora')
+            console.log(tile)
+        }
+    }
+    events.subscribe('winningGame', drawWinner)
 
 
     // botones
-    playersSubmit.addEventListener('click', () => {
+    document.querySelector('#submit').addEventListener('click', () => {
         players.make(document.querySelector('#player1').value)
         players.make(document.querySelector('#player2').value)
         board.reset()
         gameStats({ scorePlayer1: 0, scorePlayer2: 0 })
     })
+    
+    for (const tileBtn of gameBoard) {
+        tileBtn.addEventListener('click', () => {
+            const row = tileBtn.getAttribute('data-tile')[0]
+            const col = tileBtn.getAttribute('data-tile')[2]
 
-
+            board.setTile(tileBtn.textContent, row, col)
+        })
+    }
 })()
-
-
-
-
-
-//Módulo de Acciones (puente entre interfase y juego)
